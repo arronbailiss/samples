@@ -253,7 +253,7 @@ def get_runtime_url() -> str | None:
     1. Agent card generation: A2AServer uses this URL in /.well-known/agent-card.json
        to advertise how other agents can reach this agent via A2A protocol.
 
-    2. Multi-agent orchestration: Orchestrator uses this URL with a2a_send_message
+    2. Multi-agent orchestration: Orchestrator uses this URL with the a2a_client
        tool to route requests. Incorrect URL causes 404 errors during A2A calls.
 
     URL format:

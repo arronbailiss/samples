@@ -5,7 +5,7 @@ queries about orders and products. Routes requests to appropriate specialist age
 and combines responses for unified customer experience.
 
 Key features:
-- A2AClientToolProvider for dynamic agent discovery via Agent Cards
+- Vended a2a_client tool for Agent Card discovery and messaging over A2A
 - AWS Signature Version 4 (SigV4) authentication for Amazon Bedrock AgentCore
 - Streaming callback handler for real-time progress updates
 - Customer context propagation via tool_context for personalized queries
@@ -15,10 +15,12 @@ import logging
 from typing import Any
 
 import boto3
+import httpx
+from a2a.client import ClientConfig
 from strands import Agent, tool
 from strands.models import BedrockModel
 from strands.types.tools import ToolContext
-from strands_tools.a2a_client import A2AClientToolProvider
+from strands.vended_tools import make_a2a_client
 
 from sigv4_auth import SigV4HTTPXAuth
 
@@ -60,10 +62,8 @@ class StreamingProgressHandler:
             if tool_id and tool_id not in self.progress_shown_ids:
                 self.progress_shown_ids.add(tool_id)
 
-                if "a2a_send_message" in tool_name:
+                if tool_name == "a2a_client":
                     print("\n[Calling agent...]", flush=True)
-                elif "a2a_list" in tool_name:
-                    print("\n[Discovering available agents...]", flush=True)
 
         # Log routing decisions after tool input is complete
         message = kwargs.get("message", {})
@@ -81,7 +81,7 @@ class StreamingProgressHandler:
                             tool_name = tool_use.get("name", "")
                             tool_input = tool_use.get("input", {})
 
-                            if "a2a_send_message" in tool_name:
+                            if tool_name == "a2a_client" and tool_input.get("operation") == "send_message":
                                 input_str = str(tool_input).lower()
                                 if "order" in input_str:
                                     logger.info("Routing to Order Agent")
@@ -138,7 +138,7 @@ def get_customer_context(tool_context: ToolContext) -> dict:
 def create_orchestrator(order_agent_url: str, product_agent_url: str) -> Agent:
     """Create orchestrator agent with A2A client tools for multi-agent orchestration.
 
-    Configures agent with A2AClientToolProvider to communicate with specialist agents
+    Configures agent with the vended a2a_client tool to communicate with specialist agents
     deployed to Amazon Bedrock AgentCore. A2A protocol (JSON-RPC 2.0 based) enables
     standardized agent discovery via Agent Cards and inter-agent communication.
 
@@ -167,20 +167,25 @@ def create_orchestrator(order_agent_url: str, product_agent_url: str) -> Agent:
 
     logger.info("AWS SigV4 authentication configured for A2A protocol")
 
-    # A2AClientToolProvider discovers agent capabilities from Agent Cards
-    a2a_provider = A2AClientToolProvider(
-        known_agent_urls=[order_agent_url, product_agent_url],
-        httpx_client_args={"auth": auth},
+    # The caller owns the httpx client timeout; specialist agent calls can take minutes
+    client_config = ClientConfig(httpx_client=httpx.AsyncClient(auth=auth, timeout=300))
+    a2a_client = make_a2a_client(
+        allowed_endpoints=[(order_agent_url, client_config), (product_agent_url, client_config)],
+        description=(
+            "Send messages to the specialist A2A agents. "
+            f"Order Agent endpoint: {order_agent_url}. Product Agent endpoint: {product_agent_url}. "
+            "Use operation='send_message' with the agent's endpoint, or operation='discover' to fetch its Agent Card."
+        ),
     )
 
-    logger.info(f"A2A client tools available: {len(a2a_provider.tools)} tools")
+    logger.info("A2A client tool configured for Order Agent and Product Agent")
 
     agent = Agent(
         name="Ecommerce_Shopping_Orchestrator",
         description="Coordinates customer shopping queries using Order and Product agents",
         system_prompt=SYSTEM_PROMPT,
         model=BedrockModel(model_id="us.anthropic.claude-sonnet-4-6", region_name=region),
-        tools=[get_customer_context] + a2a_provider.tools,
+        tools=[get_customer_context, a2a_client],
         callback_handler=StreamingProgressHandler(),
     )
 

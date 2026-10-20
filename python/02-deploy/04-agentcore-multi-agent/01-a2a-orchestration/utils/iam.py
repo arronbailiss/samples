@@ -192,7 +192,7 @@ def create_agentcore_role(
             "Resource": ssm_resources,
         },
         # === Amazon Bedrock AgentCore Runtime Operations ===
-        # A2A client tools (a2a_send_message, a2a_discover_agent) invoke AgentCore APIs
+        # The a2a_client tool (send_message and discover operations) invokes AgentCore APIs
         {
             "Sid": "AgentCoreRuntimeAccess",
             "Effect": "Allow",

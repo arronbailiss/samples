@@ -76,14 +76,14 @@ class StreamingDisplay:
                         # human-readable, we extract agent names from URLs (e.g.,
                         # "ecommerce_order_agent" → "Order Agent"). This is purely
                         # for display - the actual A2A protocol uses full URLs.
-                        if self.current_tool == "a2a_send_message":
-                            msg = parsed.get("message_text", "")
-                            url = parsed.get("target_agent_url", "")
+                        if self.current_tool == "a2a_client" and parsed.get("operation") == "send_message":
+                            msg = parsed.get("message", "")
+                            url = parsed.get("endpoint", "")
                             agent_name = "Order Agent" if "order" in url.lower() else "Product Agent" if "product" in url.lower() else "Agent"
                             print(f"  ├─ To: {agent_name}")
                             print(f"  ├─ Message: {msg}")
-                        elif self.current_tool == "a2a_discover_agent":
-                            url = parsed.get("url", "")
+                        elif self.current_tool == "a2a_client" and parsed.get("operation") == "discover":
+                            url = parsed.get("endpoint", "")
                             print(f"  ├─ URL: {url}")
                         else:
                             print(f"  ├─ Input: {parsed}")

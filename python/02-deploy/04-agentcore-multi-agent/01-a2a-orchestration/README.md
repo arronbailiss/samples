@@ -16,7 +16,7 @@ This tutorial demonstrates how to use the Strands Agents SDK to build and deploy
 ## Key Concepts
 
 - **A2A Protocol**: Open HTTP-based protocol that lets the orchestration agent discover specialist agents and call them using standardized JSON-RPC messages
-- **Agent Card Discovery**: Each A2A agent publishes an agent card describing its capabilities, which the orchestrator reads to automatically create tools for calling that agent
+- **Agent Card Discovery**: Each A2A agent publishes an agent card describing its capabilities, which the orchestrator reads through the `a2a_client` tool to decide which agent to call
 - **SigV4 Authentication**: Every inter-agent request is signed with AWS Signature Version 4 so that only authorized agents can communicate with each other
 - **MCP Integration**: The Order Agent connects to an MCP server that exposes Amazon DynamoDB operations as tools, so it can query order data through a consistent tool interface
 - **SSM Parameter Store**: Agent runtime URLs are stored in AWS Systems Manager Parameter Store, allowing the orchestrator to look up agent endpoints dynamically at runtime

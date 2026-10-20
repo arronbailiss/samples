@@ -8,7 +8,7 @@ Key features:
 - Connection header removal to prevent SignatureDoesNotMatch errors
 - Single auth_flow method with httpx sync/async dispatching
 - Fresh signer creation per request for IAM role credential refresh
-- Integration with A2AClientToolProvider via httpx_client_args parameter
+- Integration with the vended a2a_client tool via an httpx client in ClientConfig
 
 Based on AWS sample:
 awslabs/amazon-bedrock-agentcore-samples/.../streamable_http_sigv4.py
@@ -25,7 +25,7 @@ from botocore.credentials import Credentials
 class SigV4HTTPXAuth(httpx.Auth):
     """Sign httpx requests with AWS Signature Version 4 for Amazon Bedrock AgentCore.
 
-    Enables A2AClientToolProvider to authenticate with Amazon Bedrock AgentCore-hosted
+    Enables the vended a2a_client tool to authenticate with Amazon Bedrock AgentCore-hosted
     agents by signing HTTP requests according to AWS SigV4 protocol. Handles connection
     header removal and credential refresh required for AgentCore API calls.
     """
