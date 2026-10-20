@@ -8,7 +8,7 @@ This tutorial shows how to use **skills** to keep agent instructions modular and
 |----------------------|---------------------------------------------------------------|
 | **Strands Features** | `AgentSkills` plugin, `Skill` dataclass, `@tool` decorator    |
 | **Agent Pattern**    | Single agent with skill-based instruction routing             |
-| **Tools**            | Custom mock tools, `file_read` from strands-agents-tools      |
+| **Tools**            | Custom mock tools, vended `file_editor` from strands-agents   |
 | **Model**            | Amazon Nova Lite on Amazon Bedrock                           |
 
 ## How It Works
@@ -16,7 +16,7 @@ This tutorial shows how to use **skills** to keep agent instructions modular and
 1. Skills are stored as `SKILL.md` files in subdirectories under `skills/`
 2. `AgentSkills` scans the directory and injects a compact `<available_skills>` summary into the system prompt
 3. When a user message matches a skill's domain, the agent calls the built-in `skills` tool to load the full instructions
-4. The skill can reference additional files (e.g. checklists, escalation guides) via `file_read`
+4. The skill can reference additional files (e.g. checklists, escalation guides) via `file_editor`
 
 ## Prerequisites
 
@@ -50,7 +50,7 @@ This tutorial shows how to use **skills** to keep agent instructions modular and
 
 - **`SKILL.md` structure**: front-matter (`name`, `description`, `allowed-tools`) + instruction body
 - **`AgentSkills` plugin**: how it scans a directory, injects a skill summary, and loads full instructions on demand
-- **Reference files**: how skills use `file_read` to load supporting documents at activation time
+- **Reference files**: how skills use `file_editor` to load supporting documents at activation time
 - **Programmatic skills**: creating a `Skill(...)` object at runtime without touching the filesystem
 - **Runtime updates**: using `set_available_skills` to add or replace skills mid-session
 
