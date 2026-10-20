@@ -1,5 +1,4 @@
-strands-agents>=0.1.0
-strands-agents-tools>=0.1.0
+strands-agents>=1.55.0
 boto3>=1.28.0
 urllib3>=2.6.0
 pillow>=10.0.0

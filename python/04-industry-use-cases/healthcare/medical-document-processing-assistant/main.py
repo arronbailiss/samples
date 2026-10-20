@@ -14,7 +14,7 @@ from medical_coding_tools import (
     link_snomed,
 )
 from strands import Agent
-from strands_tools import file_read
+from strands.vended_tools import file_editor
 
 # Load environment variables
 load_dotenv()
@@ -44,7 +44,7 @@ Provide clear, accurate, and structured information that can be used by healthca
 medical_agent = Agent(
     system_prompt=SYSTEM_PROMPT,
     tools=[
-        file_read,
+        file_editor,
         process_document,
         get_icd,
         get_rx,
@@ -81,6 +81,7 @@ def main():
             if not os.path.exists(file_path):
                 print(f"Error: File '{file_path}' not found.")
                 continue
+            file_path = os.path.abspath(file_path)
 
             response = medical_agent(
                 f"Process this medical document and extract diagnoses, medications, and treatments with their respective medical codes: {file_path}"
