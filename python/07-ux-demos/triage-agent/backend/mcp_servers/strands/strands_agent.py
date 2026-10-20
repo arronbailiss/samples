@@ -1,6 +1,6 @@
 from mcp.server import FastMCP
 from strands import Agent
-from strands_tools import http_request
+from strands.vended_tools import web_fetch
 
 # Create the MCP server
 mcp = FastMCP("Strands Agent MCP Server")
@@ -27,7 +27,7 @@ def real_estate_agent(query: str) -> str:
         real_estate_agent = Agent(
             model="us.amazon.nova-pro-v1:0",
             system_prompt=REAL_ESTATE_SYSTEM_PROMPT,
-            tools=[http_request], # Allow it to access the internet
+            tools=[web_fetch], # Allow it to read web pages
         )
         response = real_estate_agent(formatted_query)
         return str(response)
