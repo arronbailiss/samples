@@ -1,7 +1,7 @@
 from mcp import StdioServerParameters, stdio_client
 from strands import Agent
 from strands.tools.mcp import MCPClient
-from strands_tools import file_write
+from strands.vended_tools import file_editor
 import os
 import json
 import asyncio
@@ -24,7 +24,7 @@ class StrandAgent:
                 )
             )
             self.documentation_mcp_server.start()
-            self.tools = self.documentation_mcp_server.list_tools_sync() + [file_write]
+            self.tools = self.documentation_mcp_server.list_tools_sync() + [file_editor]
 
         except Exception as e:
             return f"Error initializing agent: {str(e)}"
@@ -46,7 +46,7 @@ class StrandAgent:
                 )
             else:
                 agent = Agent(
-                    system_prompt="""You are a thorough AWS researcher specialized in finding accurate 
+                    system_prompt=f"""You are a thorough AWS researcher specialized in finding accurate 
                     information online. For each question:
                     
                     1. Determine what information you need
@@ -58,7 +58,7 @@ class StrandAgent:
                     When researching, focus only on AWS documentation. Always provide citations 
                     for the information you find.
                     
-                    Finally output your response to a file in current directory.
+                    Finally output your response to a new file in {os.getcwd()}.
                     """,
                     tools=self.tools,
                     callback_handler=None,
