@@ -46,7 +46,7 @@ SSM_ORDER_AGENT_URL = "/ecommerce-assistant/order-agent-url"
 SSM_ORDERS_TABLE = "/ecommerce-assistant/orders-table"
 
 # Timeouts prevent container hangs if MCP server fails to start
-MCP_STARTUP_TIMEOUT = 10.0  # Max seconds to wait for subprocess
+MCP_STARTUP_TIMEOUT = 30.0  # Max seconds to wait for subprocess; uvx installs the server on each cold start
 MCP_TOOLS_TIMEOUT = 5.0     # Max seconds to fetch tool definitions
 
 SYSTEM_PROMPT_TEMPLATE = """You are an Order Agent for an e-commerce shopping assistant.
@@ -188,19 +188,23 @@ async def server_lifespan(app: FastAPI):
         table_name = get_table_name()
 
         # Launch DynamoDB MCP server as subprocess via uvx (auto-installs package)
-        # The MCP server provides query/scan tools that the agent uses to read orders
+        # Pinned to 1.0.9: 2.x removed the scan/query/get_item tools the agent uses to read orders
         mcp_tool_connection = MCPClient(
             lambda: stdio_client(
                 StdioServerParameters(
                     command="uvx",
-                    args=["awslabs.dynamodb-mcp-server@latest"],
+                    args=["awslabs.dynamodb-mcp-server==1.0.9"],
                     env={
-                        **os.environ,  # Inherit AWS credentials from container's IAM role
+                        # Inherit AWS credentials from the container's IAM role, but not OTEL_*:
+                        # the xray propagator they select isn't installed in the uvx environment
+                        **{k: v for k, v in os.environ.items() if not k.startswith("OTEL_")},
                         "AWS_REGION": region,
                         "DDB_TABLE_NAME": table_name,
                     },
                 )
-            )
+            ),
+            # Only the read tools that the order role's IAM policy allows
+            tool_filters={"allowed": ["get_item", "query", "scan", "describe_table"]},
         )
 
         # Start the MCP subprocess with timeout protection
@@ -222,8 +226,8 @@ async def server_lifespan(app: FastAPI):
         logger.info(f"Loaded {len(mcp_tools)} tools from MCP server")
 
         # Attach tools to agent - works because A2AServer holds a reference (not copy)
-        # to the agent object, so modifying order_agent.tools here affects request handling
-        order_agent.tools = mcp_tools
+        # to the agent object, so tools registered here are available to request handling
+        order_agent.tool_registry.process_tools(mcp_tools)
         order_agent.system_prompt = SYSTEM_PROMPT_TEMPLATE.format(table_name=table_name)
 
         logger.info(f"=== Startup Complete: {order_agent.name} with {len(mcp_tools)} tools ===")
